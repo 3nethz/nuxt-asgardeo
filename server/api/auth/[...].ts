@@ -6,7 +6,6 @@ import {
   getCookie,
   deleteCookie,
   createError,
-  // getMethod // Can use event.node.req.method directly
 } from "h3";
 import { getAsgardeoSdkInstance } from "#auth/server"; // Use the alias created in the module
 import { randomUUID } from "node:crypto";
@@ -15,17 +14,10 @@ export default defineEventHandler(async (event) => {
   // Get the specific path segment requested after /api/auth/
   // Example: for /api/auth/signin, action will be "signin"
   const action = event.context.params?._;
-  const method = event.node.req.method; // GET, POST, etc.
+  const method = event.node.req.method;
 
   // Get the SDK instance
   const sdk = getAsgardeoSdkInstance();
-
-  // --- Route based on action ---
-
-  // --- Sign-in Initiation ---
-  // server/api/auth/[...].ts -> ONLY the 'signin' block - REVISED
-
-  // --- Sign-in Initiation ---
   if (action === "signin" && method === "GET") {
     console.log("Handling GET /api/auth/signin");
     try {
@@ -89,7 +81,6 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  // server/api/auth/[...].ts -> ONLY the 'callback' block - REVISED
   else if (action === "callback" && method === "GET") {
     console.log("Handling GET /api/auth/callback");
 
@@ -207,11 +198,9 @@ export default defineEventHandler(async (event) => {
       console.log(
         `Authentication successful. Redirecting to final destination: ${finalRedirectUrl}`
       );
-      await sendRedirect(event, finalRedirectUrl, 302); // <<< --- THIS IS THE FIX ---
+      await sendRedirect(event, finalRedirectUrl, 302); 
       return; // Explicitly return after handling response with redirect
 
-      // --- REMOVE THE JSON RETURN ---
-      // return { message: "Authentication successful" }; // <<< DELETE THIS LINE
     } catch (error: any) {
       console.error("Error during token exchange via sdk.signIn:", error);
       // Reinstate proper error handling for production
