@@ -1,11 +1,6 @@
-// runtime/composables/asgardeo/useAuth.ts
-import { navigateTo, useRequestURL } from '#imports' // Auto-imported by Nuxt
+import { navigateTo, useRequestURL } from '#imports'
 
 export const useAuth = () => {
-  // Placeholder for reactive state (add later)
-  // const status = useState('auth-status', () => 'unauthenticated')
-  // const data = useState('auth-data', () => null)
-
   /**
    * Initiates the Asgardeo sign-in flow by redirecting the user
    * to the server-side sign-in handler.
@@ -32,10 +27,9 @@ export const useAuth = () => {
     console.warn('signOut not implemented yet');
   };
 
+
   return {
-    // status, // expose later
-    // data,    // expose later
     signIn,
-    signOut, // expose later
+    signOut,
   };
 };

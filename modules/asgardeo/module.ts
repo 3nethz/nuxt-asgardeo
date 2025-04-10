@@ -3,6 +3,7 @@ import {
   addImports,
   createResolver,
   useLogger,
+  addServerImports,
 } from "@nuxt/kit";
 import { defu } from "defu";
 import type { ModuleOptions } from "./runtime/types";
@@ -14,7 +15,6 @@ const defaultBaseUrl =
   process.env.NODE_ENV === "production"
     ? process.env.NUXT_PUBLIC_SITE_URL || "https://your-production-domain.com"
     : "http://localhost:3000";
-
 
 export default defineNuxtModule<ModuleOptions>({
   meta: {
@@ -106,12 +106,21 @@ export default defineNuxtModule<ModuleOptions>({
     // 3. Locate runtime directory (no change needed)
     const { resolve } = createResolver(import.meta.url);
     const runtimeDir = resolve("./runtime");
+    const runtimeServerDir = resolve("./runtime/server");
 
     // 4. Add composables (no change needed)
     addImports({
       name: "useAuth",
       from: resolve(runtimeDir, "composables/asgardeo/useAuth"),
     });
+
+    addServerImports([
+      {
+        name: "createAsgardeoAuthHandler",
+        as: "createAsgardeoAuthHandler",
+        from: resolve(runtimeServerDir, "handler"),
+      },
+    ]);
 
     // 5. Create virtual imports for server-side SDK helpers (no change needed)
     nuxt.hook("nitro:config", (nitroConfig) => {
