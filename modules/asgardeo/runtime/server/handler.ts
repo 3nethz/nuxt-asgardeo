@@ -16,30 +16,29 @@ import type { BasicUserInfo } from "@asgardeo/auth-node";
 export interface AsgardeoAuthHandlerOptions {
   basePath?: string;
   cookies?: {
-    state?: string; // Note: State cookie seems unused in current signIn/callback logic
+    state?: string;
     sessionId?: string;
     defaultOptions?: CookieSerializeOptions;
-    stateOptions?: CookieSerializeOptions; // Unused currently
+    stateOptions?: CookieSerializeOptions;
     sessionIdOptions?: CookieSerializeOptions;
   };
-  defaultCallbackUrl?: string; // Note: Currently hardcoded to "/" in callback
+  defaultCallbackUrl?: string;
 }
 
 function mergeCookieOptions(
   base: CookieSerializeOptions | undefined,
   specific: CookieSerializeOptions | undefined
 ): CookieSerializeOptions {
-  // Ensure base defaults are applied if specific doesn't override
   const defaultBase = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    sameSite: "lax" as const, // Explicitly type SameSite attribute
+    sameSite: "lax" as const,
   };
   return { ...defaultBase, ...base, ...specific };
 }
 
-export const createAsgardeoAuthHandler = (
+export const AsgardeoAuthHandler = (
   options?: AsgardeoAuthHandlerOptions
 ) => {
   const basePath = options?.basePath ?? "/api/auth";
@@ -57,7 +56,7 @@ export const createAsgardeoAuthHandler = (
 
   // --- Event Handler Definition ---
   return defineEventHandler(async (event: H3Event) => {
-    const action = event.context.params?._; // The part after basePath, e.g., 'signin', 'callback', 'signout'
+    const action = event.context.params?._;
     const method = event.node.req.method;
 
     // --- Get SDK Instance ---
@@ -257,11 +256,9 @@ export const createAsgardeoAuthHandler = (
           sessionId
         );
 
-        // 4. Return the fetched information as JSON
-        // The framework (e.g., Nitro/h3) usually handles JSON serialization automatically when returning an object
+        // 4. Return the fetched information
         return basicUserInfo;
       } catch (error: any) {
-        // 5. Handle potential errors from the auth service (e.g., invalid/expired session)
         console.error(
           `User endpoint: Error fetching user info for session ${sessionId}:`,
           error
@@ -273,19 +270,15 @@ export const createAsgardeoAuthHandler = (
           error.message?.includes("invalid_session") ||
           error.statusCode === 401
         ) {
-          // Adjust based on actual errors
           throw createError({
-            statusCode: 401, // Unauthorized
+            statusCode: 401, 
             statusMessage: "Invalid or expired session. Please sign in again.",
-            // Avoid leaking internal error details to the client unless necessary
-            // data: error.message,
           });
         } else {
-          // Generic server error for other issues
+          // Generic server error for issues
           throw createError({
-            statusCode: 500, // Internal Server Error
+            statusCode: 500,
             statusMessage: "Failed to retrieve user information.",
-            // data: error.message, // Avoid leaking details
           });
         }
       }

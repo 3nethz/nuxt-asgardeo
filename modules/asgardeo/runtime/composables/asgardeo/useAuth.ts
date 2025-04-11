@@ -1,33 +1,27 @@
-// Client-side: composables/useAuth.ts
-import { navigateTo } from '#imports'; // Make sure $fetch is imported
-
-// Optional: Define or import a type for the user info for better type safety
-// This should match the structure returned by your '/api/auth/user' endpoint
-// (e.g., the structure of the `BasicUserInfo` type on the server)
-interface BasicUserInfo {
-  // Example properties - adjust based on your actual data
-  sub: string; // Subject identifier is usually present
-  name?: string;
-  email?: string;
-  picture?: string;
-  // Add any other properties returned by getBasicUserInfo
-  [key: string]: any; // Allow other properties if structure is dynamic
-}
+import { navigateTo } from '#imports';
+import type { BasicUserInfo } from '@asgardeo/auth-node';
+import { ref, readonly } from 'vue';
 
 export const useAuth = () => {
-  /**
+  // State for user information
+  const user = ref<BasicUserInfo | null>(null);
+  // State for authentication status
+  const isAuthenticated = ref<boolean>(false);
+  // Loading state to track when auth operations are in progress
+  const isLoading = ref<boolean>(false);
+
+  /** 
    * Initiates the Asgardeo sign-in flow by redirecting the user
    * to the server-side sign-in handler.
    * @param { string } [callbackUrl] - Optional URL to redirect to after successful login. Defaults to current page.
    */
   const signIn = async (callbackUrl?: string) => {
-    const targetUrl = '/api/auth/signin'; // Your server route to initiate login
+    const targetUrl = '/api/auth/signin'; 
     const options = {} as any;
-
     const redirectParam = callbackUrl || (typeof window !== 'undefined' ? window.location.pathname : '/');
     options.query = { callbackUrl: redirectParam };
     options.external = true; // Required for navigating away to Asgardeo
-
+    
     console.log(`Redirecting to ${targetUrl} with callback ${redirectParam} to initiate Asgardeo login...`);
     await navigateTo(targetUrl, options);
   };
@@ -39,11 +33,13 @@ export const useAuth = () => {
    * logout endpoint.
    */
   const signOut = async () => {
-    const targetUrl = '/api/auth/signout'; // Your server route to handle logout
-    const options = {
-      external: true,
-    };
-
+    const targetUrl = '/api/auth/signout'; 
+    const options = { external: true };
+    
+    // Update state
+    user.value = null;
+    isAuthenticated.value = false;
+    
     console.log(`Navigating to ${targetUrl} to initiate sign-out process...`);
     await navigateTo(targetUrl, options);
   };
@@ -51,48 +47,57 @@ export const useAuth = () => {
   /**
    * Fetches basic information about the currently logged-in user
    * from the server-side '/api/auth/user' endpoint.
-   * The browser automatically includes the necessary session cookie.
-   * Returns the user info object on success, or null if the user is
-   * not logged in or an error occurs.
-   *
+   * Updates the internal state variables with the result.
+   * 
    * @returns {Promise<BasicUserInfo | null>} A promise resolving to user info or null.
    */
   const getUserInfo = async (): Promise<BasicUserInfo | null> => {
-    // The target URL for the server-side user endpoint
     const targetUrl = '/api/auth/user';
     console.log(`Attempting to fetch user info from ${targetUrl}`);
-
+    
+    isLoading.value = true;
+    
     try {
-      // Use $fetch to make a GET request. Cookies are sent automatically.
-      // Specify the expected return type <BasicUserInfo> for type safety.
       const userInfo = await $fetch<BasicUserInfo>(targetUrl, {
         method: 'GET',
-        // Optional: Set headers if needed, e.g., for content negotiation
-        // headers: { 'Accept': 'application/json' }
-
-        // $fetch automatically throws errors for non-2xx responses (like 401, 500)
       });
-
+      
       console.log("User info fetched successfully:", userInfo);
+      
+      // Update state
+      user.value = userInfo;
+      isAuthenticated.value = true;
+      
       return userInfo;
-
     } catch (error: any) {
-      // Catch errors thrown by $fetch (network errors, 4xx, 5xx responses)
       console.error(`Failed to fetch user info from ${targetUrl}:`, error.data || error.message || error);
-
-      // If the error is a 401 Unauthorized, it means the session is invalid or missing
-      if (error.response?.status === 401) {
-        console.warn("User is not authenticated or session expired.");
-      }
-      // Return null to indicate that user info couldn't be retrieved
+      
+      // Update state to reflect unauthenticated status
+      user.value = null;
+      isAuthenticated.value = false;
+      
       return null;
+    } finally {
+      isLoading.value = false;
     }
   };
 
-  // Return all functions from the composable
+  // Function to check authentication status on page load
+  const checkAuth = async () => {
+    isLoading.value = true;
+    const result = await getUserInfo();
+    isLoading.value = false;
+    return result !== null;
+  };
+
   return {
+    user: readonly(user),
+    isAuthenticated: readonly(isAuthenticated),
+    isLoading: readonly(isLoading),
+    
     signIn,
     signOut,
-    getUserInfo, // <-- Expose the new function
+    getUserInfo,
+    checkAuth,
   };
 };

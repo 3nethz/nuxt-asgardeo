@@ -116,8 +116,8 @@ export default defineNuxtModule<ModuleOptions>({
 
     addServerImports([
       {
-        name: "createAsgardeoAuthHandler",
-        as: "createAsgardeoAuthHandler",
+        name: "AsgardeoAuthHandler",
+        as: "AsgardeoAuthHandler",
         from: resolve(runtimeServerDir, "handler"),
       },
     ]);

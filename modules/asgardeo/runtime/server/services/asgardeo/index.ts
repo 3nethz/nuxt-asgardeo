@@ -1,11 +1,11 @@
 import { AsgardeoNodeClient, type AuthClientConfig } from "@asgardeo/auth-node"; // Adjust import if necessary
 import { useRuntimeConfig } from '#imports';
 
-let _sdkInstance: AsgardeoNodeClient<any> | null = null;
+let _authClient: AsgardeoNodeClient<any> | null = null;
 
 export function getAsgardeoSdkInstance(): AsgardeoNodeClient<any> {
-  if (_sdkInstance) {
-    return _sdkInstance;
+  if (_authClient) {
+    return _authClient;
   }
 
   const config = useRuntimeConfig().public.asgardeoAuth;
@@ -32,12 +32,12 @@ export function getAsgardeoSdkInstance(): AsgardeoNodeClient<any> {
   });
 
   try {
-    _sdkInstance = new AsgardeoNodeClient(sdkConfig);
+    _authClient = new AsgardeoNodeClient(sdkConfig);
     console.log("Asgardeo Node SDK Initialized successfully.");
   } catch (error) {
      console.error("Failed to initialize Asgardeo Node SDK:", error);
      throw new Error("Asgardeo SDK Initialization failed. Check configuration and SDK compatibility.");
   }
 
-  return _sdkInstance;
+  return _authClient;
 }
