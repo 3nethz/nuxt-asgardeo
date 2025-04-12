@@ -1,5 +1,1 @@
-const authHandlerOptions = {
-   defaultCallbackUrl: '/'
-};
-
-export default createAsgardeoAuthHandler(authHandlerOptions);
+export default AsgardeoAuthHandler();

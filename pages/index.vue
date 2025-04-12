@@ -2,22 +2,22 @@
   <div class="container">
     <h1>Welcome to the Asgardeo + Nuxt Auth Example</h1>
 
-    <div v-if="status === 'loading'" class="status-section loading">
-      <p>Loading session...</p>
+    <div v-if="isLoading" class="status-section loading">
+      <p>Loading session information...</p>
     </div>
 
     <div
-      v-else-if="status === 'authenticated'"
+      v-else-if="isAuthenticated && user"
       class="status-section authenticated"
     >
       <h2>You are signed in!</h2>
-      <div v-if="userData" class="user-info">
+      <div class="user-info">
         <p><strong>Welcome back!</strong></p>
-        <p v-if="userData.name">Name: {{ userData.name }}</p>
-        <p v-if="userData.email">Email: {{ userData.email }}</p>
-        <p v-if="userData.sub">User ID (sub): {{ userData.sub }}</p>
+        <p v-if="user.name">Name: {{ user.name }}</p>
+        <p v-if="user.email">Email: {{ user.email }}</p>
+        <p v-if="user.sub">User ID (sub): {{ user.sub }}</p>
         <pre v-if="showUserData">
-User Data: {{ JSON.stringify(userData, null, 2) }}</pre
+User Data: {{ JSON.stringify(user, null, 2) }}</pre
         >
         <button @click="showUserData = !showUserData" class="toggle-data-btn">
           {{ showUserData ? "Hide Raw Data" : "Show Raw Data" }}
@@ -39,18 +39,42 @@ User Data: {{ JSON.stringify(userData, null, 2) }}</pre
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 
-const { status, data: userData, signOut } = useAuth();
+// Use the enhanced useAuth composable with state variables
+const { user, isAuthenticated, isLoading, getUserInfo, signOut, checkAuth } =
+  useAuth();
 
+// Local state for UI controls
 const showUserData = ref(false);
 
+onMounted(async () => {
+  console.log("Index page mounted. Checking authentication status...");
+  try {
+    // The checkAuth method will update isAuthenticated and user states internally
+    await checkAuth();
+    console.log(
+      "Authentication check completed. Status:",
+      isAuthenticated.value ? "authenticated" : "unauthenticated"
+    );
+  } catch (error) {
+    console.error("Error during authentication check:", error);
+  }
+});
+
 const handleSignOut = async () => {
-  await signOut();
+  console.log("Sign out button clicked. Initiating sign out...");
+  try {
+    await signOut();
+    // The signOut method already updates the state variables
+  } catch (error) {
+    console.error("Error initiating sign out:", error);
+  }
 };
 </script>
 
 <style scoped>
+/* Keep all your existing styles here */
 .container {
   max-width: 600px;
   margin: 40px auto;
@@ -125,6 +149,12 @@ h2 {
   padding: 5px 10px;
   font-size: 0.9em;
   cursor: pointer;
+  background-color: #eee;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.toggle-data-btn:hover {
+  background-color: #ddd;
 }
 
 .auth-button,
